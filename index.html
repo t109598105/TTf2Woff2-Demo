@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+</head>
+
+<body>
+    <div>
+        <h2> TTF -> WOFF2 網頁版 Demo </h2>
+        <div> <a target="_blank" href="https://github.com/google/woff2"> Reference(Google/woff2) </a> </div>
+    </div>
+    <hr>
+    <div>
+        <div> 說明: </div>
+        <div> Web開放字型格式（Web Open Font Format，簡稱WOFF）是一種網頁所採用的字體格式標準。此字型格式發展於2009年，[3]由全球資訊網協會的Web字型工作小組標準化，現在已經是推薦標準。[4]此字體格式不但能夠有效利用壓縮來減少檔案大小，並且不包含加密也不受DRM（數位著作權管理）限制。 </div>
+        <div> 上面這段來自維基百科，會這樣做最主要是要壓縮字型大小， woff2 是用 Brotli 演算法壓縮 </div>
+    </div>
+    <hr>
+    <div>
+        <label for="my-select"> 選擇字型(選擇完會消失，要重新整理網頁才會恢復): </label>
+        <br>
+        <select id="my-select"></select>
+    </div>
+    <hr><hr>
+
+    <div> 原始: </div>
+    <hr>
+    <div>
+        Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum
+        而且我我愛你所：得太會直那個，是中國換個看看以後都能⋯的自己，度謝都喜三小很喜歡，啊不過旁邊的創作。很快就，壓的回來了好有趣對方近的，說不太都很沒那麼來的用什得。
+    </div>
+    <hr><hr><hr><hr>
+    <div> 對照: </div>
+    <hr>
+    <div id="target">
+        Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum
+        而且我我愛你所：得太會直那個，是中國換個看看以後都能⋯的自己，度謝都喜三小很喜歡，啊不過旁邊的創作。很快就，壓的回來了好有趣對方近的，說不太都很沒那麼來的用什得。
+    </div>
+    <script src="./ttf2woff2.min.js"></script>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script>
+        var fontNames = ['allseto', 'UpDock', 'roboto.black'];
+
+        var fontName;
+
+        var fontFileName;
+        var woff2Result = null;
+
+        function normal(){
+            var xhr = new XMLHttpRequest();
+            xhr.responseType = 'arraybuffer';
+            xhr.onload = function(){
+                var converter = null;
+                var fontBuff = xhr.response;
+
+                TTf2Woff2.mkWorker(function(r){
+                    TTf2Woff2.getAPI(function(r){
+                        converter = r;
+                        converter(fontBuff, function(r){
+                            woff2Result = r;
+                            setFont();
+                        });
+                    });
+                });
+
+            };
+            xhr.open('GET', fontFileName);
+            xhr.send();
+        };
+
+        function setFont(){
+            if(woff2Result.status == 'success'){
+                woff2Result.data.uri(function(r){
+                    setByD3(r);
+                });
+
+                console.log(woff2Result.data.blob());
+                console.log(woff2Result.data.buffer());
+                downloadByD3(woff2Result.data.blob());
+            }
+        };
+
+        function setByD3(uri){
+            d3.select('#custom-font')
+                .remove()
+            ;
+            d3.select('head')
+                .append('style')
+                .attr('id', 'custom-font')
+                .text(`
+                    @font-face {
+                        font-family: "${fontName}";
+                        src: url(${uri}) format('woff2');
+                    }
+                `)
+            ;
+            d3.select('#target')
+                .style('font-family', `"${fontName}"`)
+            ;
+        };
+
+        function downloadByD3(b){
+            var a = d3.create('a')
+                .attr('download', fontName+'.woff2')
+                .attr('href', URL.createObjectURL(b))
+                .node()
+                .click()
+            ;
+        };
+
+        d3.select(window)
+            .on('load', function(){
+                
+                var mySelect = d3.select('#my-select');
+
+
+                mySelect
+                    .selectAll('option')
+                    .data(['-----'].concat(fontNames))
+                    .enter()
+                    .append('option')
+                        .attr('value', function(d){ return d; })
+                        .text(function(d){ return d;})
+                        .filter(function(_, i){ return i==0 })
+                            .attr('selected', '')
+                ;
+
+                mySelect.on('change', function(){
+                    if(this.value != '-----'){
+                        fontName = this.value;
+                        fontFileName = fontName + '.ttf';
+
+                        this.remove();
+                        normal();
+                    }
+                });
+            })
+        ;
+    </script>
+
+</body>
+
+</html>
